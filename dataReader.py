@@ -1,9 +1,9 @@
-#Name: Jacob Ratzlaff
+#Name: Jacob Ratzlaff and Austin Leo
 #Date: Feb 22, 2018
 #A lab to read acceleration off of a simple 3 dof sensor
 import smbus 
 import time
-
+import controller
 
 #Accelerometer class
 
@@ -74,8 +74,8 @@ def initSensors(accel = False, gyro = False, magno = False):
 		bus.write_byte_data(0x6B, 0x20, 0b11000000)
 	if accel == True:
 		bus.write_byte_data(0x6B, 0x10, 0b11001011)
-	if magno == True:
-		bus.write_byte_data(0x1E, 0x20, 0b01011000)
+	#if magno == True:
+	#	bus.write_byte_data(0x1E, 0x20, 0b01011000)
 
 def readAccel(delay, adjuster=0):
 	#Parameters for write_byte_data
@@ -83,15 +83,12 @@ def readAccel(delay, adjuster=0):
 	#2. Communication data - active mode control register
 	#3. Settings and or mode
 	#Gyro
-	#bus.write_byte_data(0x6B, 0x10, 0b11001011) 
 	bus.write_byte_data(0x6B, 0x1E, 0b00111000)
 	
 	#Accel
-	#bus.write_byte_data(0x6B, 0x20, 0b11000000)
 	bus.write_byte_data(0x6B, 0x1F, 0b00111000)
 	
 	#Magno
-	#bus.write_byte_data(0x1E, 0x20, 0b01011000)
 	#bus.write_byte_data(0x1E, 0x, 0b01011000)
 	
 	time.sleep(delay/2.0)
@@ -100,7 +97,7 @@ def readAccel(delay, adjuster=0):
 	accel = bus.read_i2c_block_data(0x6B, 0x28,6)
 	data = Accelerometer(data=accel+gyro, adjuster=adjuster)
 
-	#put register in standbye mode
+	#put register in standby mode
 	bus.write_byte_data(0x6B, 0x1E, 0b00000000) 
 	bus.write_byte_data(0x6B, 0x1F, 0b00000000)
 	time.sleep(delay/2.0)
@@ -117,11 +114,14 @@ def calibrateAccel(calibrationTime):
 	sum.zA -= 1000
 	return sum
 
+def initESC(	
+	
 if __name__ == "__main__":
 	# Get I2C bus - initial bus to channel 1
 	bus = smbus.SMBus(1) 
 	adj = calibrateAccel(5)
 	initSensors(accel = True, gyro = True)
+	
 	try:
 		for i in range(1000):
 			data = readAccel(.5, adj)
