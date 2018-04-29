@@ -12,7 +12,9 @@ class Accelerometer:
 		self.xA = (data[1]*256 + data[0])/16
 		self.yA = (data[3]*256 + data[2])/16
 		self.zA = (data[5]*256 + data[4])/16
-				
+		#x=pitch
+		#y=roll
+		#z=yaw		
 		self.xG = (data[7]*256 + data[6])/16
 		self.yG = (data[9]*256 + data[8])/16
 		self.zG = (data[11]*256 + data[10])/16
@@ -63,6 +65,41 @@ class Accelerometer:
 		self.yG/=quantity
 		self.zG/=quantity
 
+class Position:
+	def __init__(self):
+		self.x=0
+		self.y=0
+		self.z=0
+		self.xV=0
+		self.yV=0
+		self.zV=0
+		self.pitch=0
+		self.roll=0
+		self.yaw=0
+	def update(self, accel, time):
+		self.pitch+=accel.xG*time
+		#self.pitch %=800
+		self.roll+=accel.yG*time
+		#self.roll %=800
+		self.yaw+=accel.zG*time
+		#self.yaw %=800
+		#200 = 90 degrees
+		self.xV+=1000*time*(self.pitch/200-self.roll/200)
+		self.yV-=1000*time*(self.roll/200-self.pitch/200)
+		self.zV-=1000*time*(1 -self.pitch/200 -self.roll/200)
+		#TODO:Remove gravity
+
+		self.xV+=accel.xA*time
+		self.yV+=accel.yA*time
+		self.zV+=accel.zA*time
+		self.x+=self.xV*time
+		self.y+=self.yV*time
+		self.z+=self.zV*time
+	def print(self):
+		print('Location:\t({},{},{})'.format(self.x,self.y,self.z))
+		print('Velocity:\t({},{},{})'.format(self.xV,self.yV,self.zV))
+		print('Orientation:\t({},{},{})'.format(self.pitch,self.roll,self.yaw), end='\n\n\n')
+
 def printList(l):
 	str =""
 	for i in l:
@@ -80,7 +117,7 @@ def initSensors(accel = False, gyro = False, magno = False):
 def readAccel(delay, adjuster=0):
 	#Parameters for write_byte_data
 	#1. Address of the device
-	#2. Communication data - active mode control register
+	#2. Communication data - active mode control register, sub address
 	#3. Settings and or mode
 	#Gyro
 	#bus.write_byte_data(0x6B, 0x10, 0b11001011) 
@@ -122,10 +159,13 @@ if __name__ == "__main__":
 	bus = smbus.SMBus(1) 
 	adj = calibrateAccel(5)
 	initSensors(accel = True, gyro = True)
+	pos = Position()
 	try:
-		for i in range(1000):
-			data = readAccel(.5, adj)
-			data.printData()
+		for i in range(100000):
+			data = readAccel(.01, adj)
+			pos.update(data,.01)
+			if i % 100 == 0:
+				pos.print()
 	#capture the control c and exit cleanly
 	except(KeyboardInterrupt, SystemExit):
 		print("User requested exit.")
