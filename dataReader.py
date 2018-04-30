@@ -3,7 +3,7 @@
 #A lab to read acceleration off of a simple 3 dof sensor
 import smbus 
 import time
-import controller
+#import controller
 
 #Accelerometer class
 
@@ -77,21 +77,29 @@ class Position:
 		self.roll=0
 		self.yaw=0
 	def update(self, accel, time):
-		self.pitch+=accel.xG*time
+		GTHRESH = .1
+		VTHRESH = .1
+		if(abs(accel.xG*time) > GTHRESH):
+			self.pitch+=accel.xG*time
 		#self.pitch %=800
-		self.roll+=accel.yG*time
+		if(abs(accel.yG*time) > GTHRESH):
+			self.roll+=accel.yG*time
 		#self.roll %=800
-		self.yaw+=accel.zG*time
+		if(abs(accel.zG*time) > GTHRESH):
+			self.yaw+=accel.zG*time
 		#self.yaw %=800
 		#200 = 90 degrees
-		self.xV+=1000*time*(self.pitch/200-self.roll/200)
-		self.yV-=1000*time*(self.roll/200-self.pitch/200)
-		self.zV-=1000*time*(1 -self.pitch/200 -self.roll/200)
+		#self.xV-=1000*time*(self.pitch/200-self.roll/200)
+		#self.yV-=1000*time*(self.roll/200-self.pitch/200)
+		self.zV-=1000*time#*(1 -self.pitch/200 -self.roll/200)
 		#TODO:Remove gravity
 
-		self.xV+=accel.xA*time
-		self.yV+=accel.yA*time
-		self.zV+=accel.zA*time
+		if(abs(accel.xV*time) > VTHRESH):
+			self.xV+=accel.xA*time
+		if(abs(accel.xV*time) > VTHRESH):
+			self.yV+=accel.yA*time
+		if(abs(accel.xV*time) > VTHRESH):
+			self.zV+=accel.zA*time
 		self.x+=self.xV*time
 		self.y+=self.yV*time
 		self.z+=self.zV*time
@@ -99,6 +107,8 @@ class Position:
 		print('Location:\t({},{},{})'.format(self.x,self.y,self.z))
 		print('Velocity:\t({},{},{})'.format(self.xV,self.yV,self.zV))
 		print('Orientation:\t({},{},{})'.format(self.pitch,self.roll,self.yaw), end='\n\n\n')
+		#negative pitch == left rolling
+		#positive roll == tipping back
 
 def printList(l):
 	str =""
@@ -106,7 +116,7 @@ def printList(l):
 		i.printVec()
 
 # Sends enable bytes to control registers
-def initSensors(accel = False, gyro = False, magno = False):
+def initSensors(bus, accel = False, gyro = False, magno = False):
 	if gyro == True:
 		bus.write_byte_data(0x6B, 0x20, 0b11000000)
 	if accel == True:
@@ -114,7 +124,7 @@ def initSensors(accel = False, gyro = False, magno = False):
 	#if magno == True:
 	#	bus.write_byte_data(0x1E, 0x20, 0b01011000)
 
-def readAccel(delay, adjuster=0):
+def readAccel(bus, delay, adjuster=0):
 	#Parameters for write_byte_data
 	#1. Address of the device
 	#2. Communication data - active mode control register, sub address
@@ -142,27 +152,26 @@ def readAccel(delay, adjuster=0):
 	#print(data)
 	return data
 
-def calibrateAccel(calibrationTime):
+def calibrateAccel(bus,calibrationTime):
 	sum = Accelerometer([0]*12)
 	for i in range(calibrationTime*100):
-		data = readAccel(.01)
+		data = readAccel(bus, .01)
 		sum.sum(data)
 	sum.average(calibrationTime*100)
 	sum.zA -= 1000
 	return sum
 
-def initESC(	
 	
 if __name__ == "__main__":
 	# Get I2C bus - initial bus to channel 1
 	bus = smbus.SMBus(1) 
-	adj = calibrateAccel(5)
-	initSensors(accel = True, gyro = True)
+	adj = calibrateAccel(bus,5)
+	initSensors(bus, accel = True, gyro = True)
 	pos = Position()
 	
 	try:
 		for i in range(100000):
-			data = readAccel(.01, adj)
+			data = readAccel(bus, .01, adj)
 			pos.update(data,.01)
 			if i % 100 == 0:
 				pos.print()
