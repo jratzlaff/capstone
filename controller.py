@@ -1,3 +1,6 @@
+#Author: Jacob Ratzlaff and Austin Leo
+#Purpose: Control the speeds of four ESCs via pigpio, also self correcting from an accelerometer
+
 import os	 #importing os library so as to communicate with the system
 import time   #importing time library to make Rpi wait because its too impatient 
 os.system ("sudo pigpiod") #Launching GPIO library
