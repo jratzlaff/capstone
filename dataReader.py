@@ -77,36 +77,33 @@ class Position:
 		self.roll=0
 		self.yaw=0
 	def update(self, accel, time):
-		GTHRESH = .1
-		VTHRESH = .1
+		GTHRESH = 25*time
+		VTHRESH = 100*time 
 		if(abs(accel.xG*time) > GTHRESH):
 			self.pitch+=accel.xG*time
-		#self.pitch %=800
 		if(abs(accel.yG*time) > GTHRESH):
 			self.roll+=accel.yG*time
-		#self.roll %=800
 		if(abs(accel.zG*time) > GTHRESH):
 			self.yaw+=accel.zG*time
-		#self.yaw %=800
-		#200 = 90 degrees
-		#self.xV-=1000*time*(self.pitch/200-self.roll/200)
-		#self.yV-=1000*time*(self.roll/200-self.pitch/200)
-		self.zV-=1000*time#*(1 -self.pitch/200 -self.roll/200)
+		#20 = 45 degrees
+		#self.xV-=1000*time*(self.pitch/40-self.roll/40)
+		#self.yV-=1000*time*(self.roll/40-self.pitch/40)
+		#self.zV-=1000*time #*(1 -self.pitch/40 -self.roll/40)
 		#TODO:Remove gravity
 
-		if(abs(accel.xV*time) > VTHRESH):
+		if(abs(accel.xA*time) > VTHRESH):
 			self.xV+=accel.xA*time
-		if(abs(accel.xV*time) > VTHRESH):
+		if(abs(accel.xA*time) > VTHRESH):
 			self.yV+=accel.yA*time
-		if(abs(accel.xV*time) > VTHRESH):
+		if(abs(accel.xA*time) > VTHRESH):
 			self.zV+=accel.zA*time
 		self.x+=self.xV*time
 		self.y+=self.yV*time
 		self.z+=self.zV*time
 	def print(self):
 		print('Location:\t({},{},{})'.format(self.x,self.y,self.z))
-		print('Velocity:\t({},{},{})'.format(self.xV,self.yV,self.zV))
-		print('Orientation:\t({},{},{})'.format(self.pitch,self.roll,self.yaw), end='\n\n\n')
+		print('Velocity(x,y,z):\t({},{},{})'.format(self.xV,self.yV,self.zV))
+		print('Orientation(p,r,y):\t({},{},{})'.format(self.pitch,self.roll,self.yaw), end='\n\n\n')
 		#negative pitch == left rolling
 		#positive roll == tipping back
 
@@ -171,9 +168,9 @@ if __name__ == "__main__":
 	
 	try:
 		for i in range(100000):
-			data = readAccel(bus, .01, adj)
-			pos.update(data,.01)
-			if i % 100 == 0:
+			data = readAccel(bus, .001, adj)
+			pos.update(data,.001)
+			if i % 10 == 0:
 				pos.print()
 	#capture the control c and exit cleanly
 	except(KeyboardInterrupt, SystemExit):
